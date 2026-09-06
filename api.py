@@ -52,12 +52,16 @@ def save_data(payload: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/load")
-def load_data():
+def load_data(user_id: str = None):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT data FROM user_data ORDER BY id DESC LIMIT 1")
+        if user_id:
+            cursor.execute("SELECT data FROM user_data WHERE data->>'user_id' = %s ORDER BY id DESC LIMIT 1", (str(user_id),))
+        else:
+            cursor.execute("SELECT data FROM user_data ORDER BY id DESC LIMIT 1")
+            
         row = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -94,19 +98,23 @@ def save_car_data(payload: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/car-data")
-def load_car_data():
+def load_car_data(user_id: str = None):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT data FROM car_data ORDER BY id ASC")
+        if user_id:
+            cursor.execute("SELECT data FROM car_data WHERE data->>'user_id' = %s ORDER BY id ASC", (str(user_id),))
+        else:
+            cursor.execute("SELECT data FROM car_data ORDER BY id ASC")
+            
         row = cursor.fetchall()
         cursor.close()
         conn.close()
 
         if row:
             return [r[0] for r in row]
-        return {}
+        return []
     except Exception as e:
         print("Error in /api/car-data GET:", traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
