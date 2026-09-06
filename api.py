@@ -56,6 +56,36 @@ def load_data():
     cursor.close()
     conn.close()
     
+@app.post("/api/car-data")
+def save_car_data(payload: dict):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS car_data (
+            id SERIAL PRIMARY KEY,
+            data JSONB NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("INSERT INTO car_data (data) VALUES (%s)", (json.dumps(payload),))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {"status": "success", "message": "Car data saved successfully"}
+
+@app.get("/api/car-data")
+def load_car_data():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT data FROM car_data ORDER BY id DESC LIMIT 1")
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
     if row:
         return row[0]
     return {}
