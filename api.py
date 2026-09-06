@@ -6,11 +6,9 @@ from pydantic import BaseModel
 
 app = FastAPI()
 app.add_middleware()
-    CORSMiddleware,
-    allow_origins=[
-        "https://coolray775agz05.netlify.app",
-        "http://localhost:3000",  # Для локальной разработки
-    ],
+CORSMiddleware,
+allow_origins=["https://coolray775agz05.netlify.app", "http://localhost:3000",  # Для локальной разработки
+              ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
