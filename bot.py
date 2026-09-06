@@ -13,6 +13,7 @@ if not BOT_TOKEN:
 
 bot = Bot(token="8714875899:AAGdzIkr8Ho2asap9dLNWQwSCbj8cj5OoJQ")
 dp = Dispatcher()
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 # Команда /start отправляет кнопку для открытия Mini App
 @dp.message(Command("start"))
