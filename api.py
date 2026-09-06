@@ -14,17 +14,6 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)
-# Разрешаем запросы с вашего фронтенда на Netlify
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
     try:
