@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Учет Автомобиля (₸)</title>
+    <!-- Подключение Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #f4f6f9);
+            --card-bg: var(--tg-theme-secondary-bg-color, #ffffff);
+            --text-color: var(--tg-theme-text-color, #2c3e50);
+            --accent-color: var(--tg-theme-button-color, #2563eb);
+            --accent-text-color: var(--tg-theme-button-text-color, #ffffff);
+            --border-color: #e2e8f0;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --success-color: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 12px;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding-bottom: 30px;
+        }
+
+        header {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .car-info-badge {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        h1 {
+            font-size: 20px;
+            color: var(--text-color);
+        }
+
+        .db-controls {
+            display: flex;
+            gap: 6px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .db-controls .btn {
+            flex: 1;
+            padding: 10px 8px;
+            font-size: 12px;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: var(--accent-text-color);
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: background-color 0.2s, transform 0.1s;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 6px 10px;
+            font-size: 13px;
+            border-radius: 6px;
+        }
+
+        /* Tabs Navigation (Mobile First) */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab-btn {
+            padding: 10px 14px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            color: #475569;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-color);
+            color: var(--accent-text-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Layout Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        @media (min-width: 768px) {
+            header {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            .db-controls {
+                width: auto;
+            }
+            .grid {
+                grid-template-columns: 1fr 1.5fr;
+            }
+            body {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+        }
+
+        /* Cards & Forms */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+        }
+
+        .card h2 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 15px;
+            background-color: #fafafa;
+            color: var(--text-color);
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background-color: #fff;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .calc-hint {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        /* Responsive Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        /* Stats Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .stat-card .label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .stat-card .value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-top: 4px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-success { background-color: #d1fae5; color: #065f46; }
+        .badge-warning { background-color: #fef3c7; color: #92400e; }
+        .badge-danger { background-color: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>🏎️ Учет Автомобиля (₸)</h1>
+            <div id="car-title-display" class="car-info-badge">Информация об авто не указана</div>
+        </div>
+        <div class="db-controls">
+            <button class="btn btn-outline" onclick="loadFromOnlineDB()">📥 Загрузить из БД</button>
+            <button class="btn btn-outline" onclick="saveToOnlineDB()">📤 Сохранить в БД</button>
+            <button class="btn" onclick="sendToTelegram()">💬 В бот</button>
+            <button class="btn btn-outline" onclick="exportData()">💾 Экспорт</button>
+            <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">📂 Импорт</button>
+            <input type="file" id="importFile" style="display:none" onchange="importData(event)" accept=".json">
+        </div>
+    </header>
+
+    <!-- Dash Summary -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="label">Текущий пробег</div>
+            <div class="value" id="stat-odo">0 км</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Ср. расход</div>
+            <div class="value" id="stat-consumption">0 л</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Топливо</div>
+            <div class="value" id="stat-fuel-cost">0 ₸</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">ТО / Ремонт</div>
+            <div class="value" id="stat-service-cost">0 ₸</div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab('fuel', event)">⛽ Заправки</button>
+        <button class="tab-btn" onclick="openTab('maintenance', event)">🔔 Напоминания</button>
+        <button class="tab-btn" onclick="openTab('service', event)">🛠️ Обслуживание</button>
+        <button class="tab-btn" onclick="openTab('car-details', event)">🚗 Автомобиль</button>
+    </div>
+
+    <!-- TAB 1: Fuel -->
+    <div id="fuel" class="tab-content active">
+        <div class="grid">
+            <div class="card">
+                <h2>Добавить заправку</h2>
+                <form id="fuel-form">
+                    <div class="form-group">
+                        <label>Дата</label>
+                        <input type="date" id="fuel-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Пробег (км)</label>
+                        <input type="number" id="fuel-odo" required min="0" inputmode="numeric">
+                    </div>
+                    <div class="form-group">
+                        <label>Объем топлива (литры)</label>
+                        <input type="number" id="fuel-liters" step="0.01" min="0" inputmode="decimal" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Цена за литр (₸)</label>
+                        <input type="number" id="fuel-price" step="0.01" min="0" inputmode="decimal" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Общая сумма (₸)</label>
+                        <input type="number" id="fuel-total" step="0.01" min="0" inputmode="decimal" placeholder="0.00">
+                        <div class="calc-hint">💡 Заполните любые 2 поля из трёх (Литры, Цена, Сумма) — третье рассчитается автоматически.</div>
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%;">Сохранить заправку</button>
+                </form>
+            </div>
+            <div class="card">
+                <h2>История заправок</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th>Пробег</th>
+                                <th>Литры</th>
+                                <th>Сумма</th>
+                                <th>Расход</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="fuel-table"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: Maintenance Intervals -->
+    <div id="maintenance" class="tab-content">
+        <div class="grid">
+            <div class="card">
+                <h2>Настройка интервала ТО</h2>
+                <form id="rules-form">
+                    <div class="form-group">
+                        <label>Наименование работы</label>
+                        <input type="text" id="rule-title" placeholder="Замена масла ДВС..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>Интервал обслуживания (км)</label>
+                        <input type="number" id="rule-interval" placeholder="8000" required min="100" inputmode="numeric">
+                    </div>
+                    <div class="form-group">
+                        <label>Пробег последнего проведения (км)</label>
+                        <input type="number" id="rule-last-odo" placeholder="120000" required min="0" inputmode="numeric">
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%;">Добавить / Обновить</button>
+                </form>
+            </div>
+            <div class="card">
+                <h2>Статус регламентных работ</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Услуга</th>
+                                <th>Интервал</th>
+                                <th>Пред. ТО</th>
+                                <th>След. ТО</th>
+                                <th>Осталось</th>
+                                <th>Статус</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="rules-table"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: Service Log -->
+    <div id="service" class="tab-content">
+        <div class="grid">
+            <div class="card">
+                <h2>Запись о проведенном ТО</h2>
+                <form id="service-form">
+                    <div class="form-group">
+                        <label>Дата</label>
+                        <input type="date" id="service-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Пробег (км)</label>
+                        <input type="number" id="service-odo" required min="0" inputmode="numeric">
+                    </div>
+                    <div class="form-group">
+                        <label>Описание работ / Запчасти</label>
+                        <input type="text" id="service-desc" placeholder="Замена масла, колодок..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>Общая стоимость (₸)</label>
+                        <input type="number" id="service-cost" step="0.01" required min="0" inputmode="decimal">
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%;">Внести в журнал</button>
+                </form>
+            </div>
+            <div class="card">
+                <h2>История обслуживания</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th>Пробег</th>
+                                <th>Описание</th>
+                                <th>Стоимость</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="service-table"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: Car Info -->
+    <div id="car-details" class="tab-content">
+        <div class="card" style="max-width: 600px;">
+            <h2>Характеристики авто и начальный пробег</h2>
+            <form id="car-info-form">
+                <div class="form-group">
+                    <label>Начальный пробег при покупке (км)</label>
+                    <input type="number" id="car-initial-odo" placeholder="100000" min="0" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label>Марка и модель</label>
+                    <input type="text" id="car-model" placeholder="Например: Geely Coolray">
+                </div>
+                <div class="form-group">
+                    <label>Год выпуска</label>
+                    <input type="number" id="car-year" placeholder="2020" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label>Заметки и спецификации</label>
+                    <textarea id="car-notes" placeholder="VIN-код, объем двигателя, спецификация масла..."></textarea>
+                </div>
+                <button type="submit" class="btn">Сохранить информацию</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp API
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.expand();
+            tg.ready();
+        }
+
+        // Telegram ID пользователя или резервный ID
+        const userId = tg?.initDataUnsafe?.user?.id || 12345;
+        
+        // Публичный URL сервиса Railway
+        const API_URL = 'https://zesty-prosperity-production-372a.up.railway.app/api/car-data';
+
+        let appData = {
+            carInfo: { initialOdo: 0, model: '', year: '', notes: '' },
+            fuel: [],
+            service: [],
+            rules: []
+        };
+
+        let lastEditedFuel = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            document.getElementById('fuel-date').valueAsDate = new Date();
+            document.getElementById('service-date').valueAsDate = new Date();
+            setupFuelAutoCalc();
+        });
+
+        async function loadData() {
+            await loadFromOnlineDB(false);
+            populateCarForm();
+            renderAll();
+        }
+
+        async function loadFromOnlineDB(showAlerter = true) {
+            try {
+                const response = await fetch(`${API_URL}/?userId=${userId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data) {
+                        // Безопасное извлечение объекта данных из ответа сервера
+                        const remoteData = Array.isArray(data) ? data[0] : data;
+                        if (remoteData) {
+                            appData = {
+                                carInfo: {
+                                    initialOdo: remoteData.initialOdometer !== undefined ? remoteData.initialOdometer : (remoteData.carInfo?.initialOdo || 0),
+                                    model: remoteData.model || remoteData.carInfo?.model || '',
+                                    year: remoteData.year || remoteData.carInfo?.year || '',
+                                    notes: remoteData.notes || remoteData.carInfo?.notes || ''
+                                },
+                                fuel: remoteData.fuel || [],
+                                service: remoteData.service || [],
+                                rules: remoteData.rules || []
+                            };
+                            localStorage.setItem('car_tracker_data', JSON.stringify(appData));
+                            populateCarForm();
+                            renderAll();
+                            if (showAlerter) alert('Данные успешно загружены из онлайн базы БД!');
+                            return;
+                        }
+                    }
+                    if (showAlerter) alert('Нет сохраненных данных в базе БД.');
+                } else {
+                    if (showAlerter) alert('Ошибка получения данных из базы БД.');
+                }
+            } catch (e) {
+                console.error('Ошибка загрузки данных:', e);
+                loadFromLocalStorage();
+                if (showAlerter) alert('Ошибка соединения с базой БД (загружены локальные данные).');
+            }
+        }
+
+        async function saveToOnlineDB(showAlert = true) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: userId, data: appData })
+                });
+                if (response.ok && showAlert) {
+                    alert('Данные успешно сохранены в онлайн БД!');
+                } else if (!response.ok && showAlert) {
+                    alert('Ошибка при сохранении в БД!');
+                }
+            } catch (e) {
+                console.error("Ошибка сохранения данных на Railway:", e);
+                if (showAlert) alert('Не удалось выгрузить данные в онлайн БД!');
+            }
+        }
+
+        function loadFromLocalStorage() {
+            const local = localStorage.getItem('car_tracker_data');
+            if (local) {
+                try {
+                    const parsed = JSON.parse(local);
+                    appData = {
+                        carInfo: parsed.carInfo || { initialOdo: 0, model: '', year: '', notes: '' },
+                        fuel: parsed.fuel || [],
+                        service: parsed.service || [],
+                        rules: parsed.rules || []
+                    };
+                } catch(e) { console.error("Ошибка парсинга локальных данных", e); }
+            }
+        }
+
+        async function saveData() {
+            renderAll();
+            localStorage.setItem('car_tracker_data', JSON.stringify(appData));
+            saveToOnlineDB(false);
+        }
+
+        function sendToTelegram() {
+            if (tg && tg.sendData) {
+                tg.sendData(JSON.stringify(appData));
+                tg.close();
+            } else {
+                alert('Эта функция работает только внутри приложения Telegram!');
+            }
+        }
+
+        function openTab(tabName, evt) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            if (evt) evt.currentTarget.classList.add('active');
+        }
+
+        function setupFuelAutoCalc() {
+            const litersInput = document.getElementById('fuel-liters');
+            const priceInput = document.getElementById('fuel-price');
+            const totalInput = document.getElementById('fuel-total');
+
+            function registerEdit(fieldName) {
+                lastEditedFuel = lastEditedFuel.filter(name => name !== fieldName);
+                lastEditedFuel.push(fieldName);
+                if (lastEditedFuel.length > 2) {
+                    lastEditedFuel.shift();
+                }
+                calculateMissingFuelField();
+            }
+
+            litersInput.addEventListener('input', () => registerEdit('liters'));
+            priceInput.addEventListener('input', () => registerEdit('price'));
+            totalInput.addEventListener('input', () => registerEdit('total'));
+        }
+
+        function calculateMissingFuelField() {
+            const litersInput = document.getElementById('fuel-liters');
+            const priceInput = document.getElementById('fuel-price');
+            const totalInput = document.getElementById('fuel-total');
+
+            const l = parseFloat(litersInput.value);
+            const p = parseFloat(priceInput.value);
+            const t = parseFloat(totalInput.value);
+
+            if (lastEditedFuel.includes('liters') && lastEditedFuel.includes('price') && !isNaN(l) && !isNaN(p) && l > 0 && p > 0) {
+                totalInput.value = (l * p).toFixed(2);
+            } else if (lastEditedFuel.includes('total') && lastEditedFuel.includes('liters') && !isNaN(t) && !isNaN(l) && t > 0 && l > 0) {
+                priceInput.value = (t / l).toFixed(2);
+            } else if (lastEditedFuel.includes('total') && lastEditedFuel.includes('price') && !isNaN(t) && !isNaN(p) && t > 0 && p > 0) {
+                litersInput.value = (t / p).toFixed(2);
+            }
+        }
+
+        function populateCarForm() {
+            if (appData.carInfo) {
+                document.getElementById('car-initial-odo').value = appData.carInfo.initialOdo || 0;
+                document.getElementById('car-model').value = appData.carInfo.model || '';
+                document.getElementById('car-year').value = appData.carInfo.year || '';
+                document.getElementById('car-notes').value = appData.carInfo.notes || '';
+            }
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `car_db_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported.fuel && imported.service && imported.rules) {
+                        appData = imported;
+                        if (!appData.carInfo) appData.carInfo = { initialOdo: 0, model: '', year: '', notes: '' };
+                        saveData();
+                        populateCarForm();
+                        alert('База данных успешно импортирована!');
+                    } else {
+                        alert('Неверный формат файла!');
+                    }
+                } catch (err) {
+                    alert('Ошибка чтения файла!');
+                }
+            };
+            fileReader.readAsText(event.target.files[0]);
+        }
+
+        function getMaxOdometer() {
+            let odoArr = [appData.carInfo ? Number(appData.carInfo.initialOdo || 0) : 0];
+            appData.fuel.forEach(f => odoArr.push(Number(f.odo)));
+            appData.service.forEach(s => odoArr.push(Number(s.odo)));
+            return Math.max(...odoArr);
+        }
+
+        function formatKZT(amount) {
+            return new Intl.NumberFormat('ru-RU').format(Math.round(amount)) + ' ₸';
+        }
+
+        document.getElementById('car-info-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            appData.carInfo = {
+                initialOdo: Number(document.getElementById('car-initial-odo').value) || 0,
+                model: document.getElementById('car-model').value.trim(),
+                year: document.getElementById('car-year').value.trim(),
+                notes: document.getElementById('car-notes').value.trim()
+            };
+            saveData();
+            alert('Информация сохранена!');
+        });
+
+        document.getElementById('fuel-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            let liters = parseFloat(document.getElementById('fuel-liters').value);
+            let price = parseFloat(document.getElementById('fuel-price').value);
+            let total = parseFloat(document.getElementById('fuel-total').value);
+
+            if (!isNaN(liters) && !isNaN(price) && isNaN(total)) total = liters * price;
+            if (!isNaN(total) && !isNaN(liters) && isNaN(price)) price = total / liters;
+            if (!isNaN(total) && !isNaN(price) && isNaN(liters)) liters = total / price;
+
+            if (isNaN(liters) || isNaN(price)) {
+                alert('Заполните хотя бы 2 из полей: Литры, Цена, Сумма');
+                return;
+            }
+
+            const item = {
+                id: Date.now(),
+                date: document.getElementById('fuel-date').value,
+                odo: Number(document.getElementById('fuel-odo').value),
+                liters: liters,
+                price: price
+            };
+
+            appData.fuel.push(item);
+            appData.fuel.sort((a, b) => a.odo - b.odo);
+            saveData();
+            
+            e.target.reset();
+            lastEditedFuel = [];
+            document.getElementById('fuel-date').valueAsDate = new Date();
+        });
+
+        document.getElementById('rules-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('rule-title').value.trim();
+            const interval = Number(document.getElementById('rule-interval').value);
+            const lastOdo = Number(document.getElementById('rule-last-odo').value);
+
+            const existingIndex = appData.rules.findIndex(r => r.title.toLowerCase() === title.toLowerCase());
+            if (existingIndex >= 0) {
+                appData.rules[existingIndex] = { title, interval, lastOdo };
+            } else {
+                appData.rules.push({ title, interval, lastOdo });
+            }
+
+            saveData();
+            e.target.reset();
+        });
+
+        document.getElementById('service-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const item = {
+                id: Date.now(),
+                date: document.getElementById('service-date').value,
+                odo: Number(document.getElementById('service-odo').value),
+                desc: document.getElementById('service-desc').value,
+                cost: Number(document.getElementById('service-cost').value)
+            };
+
+            appData.service.push(item);
+            appData.service.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            appData.rules.forEach(rule => {
+                if (item.desc.toLowerCase().includes(rule.title.toLowerCase())) {
+                    if (item.odo > rule.lastOdo) rule.lastOdo = item.odo;
+                }
+            });
+
+            saveData();
+            e.target.reset();
+            document.getElementById('service-date').valueAsDate = new Date();
+        });
+
+        function deleteFuel(id) {
+            appData.fuel = appData.fuel.filter(i => i.id !== id);
+            saveData();
+        }
+
+        function deleteService(id) {
+            appData.service = appData.service.filter(i => i.id !== id);
+            saveData();
+        }
+
+        function deleteRule(title) {
+            appData.rules = appData.rules.filter(r => r.title !== title);
+            saveData();
+        }
+
+        function renderAll() {
+            renderHeaderInfo();
+            renderStats();
+            renderFuelTable();
+            renderRulesTable();
+            renderServiceTable();
+        }
+
+        function renderHeaderInfo() {
+            const display = document.getElementById('car-title-display');
+            if (appData.carInfo && (appData.carInfo.model || appData.carInfo.year)) {
+                let text = `${appData.carInfo.model || ''} ${appData.carInfo.year ? '(' + appData.carInfo.year + ' г.)' : ''}`;
+                if (appData.carInfo.initialOdo) text += ` • Покупка: ${appData.carInfo.initialOdo.toLocaleString('ru-RU')} км`;
+                display.innerText = text;
+            } else {
+                display.innerText = 'Информация об авто не указана';
+            }
+        }
+
+        function renderStats() {
+            const currentOdo = getMaxOdometer();
+            document.getElementById('stat-odo').innerText = currentOdo.toLocaleString('ru-RU') + ' км';
+
+            const totalFuelCost = appData.fuel.reduce((sum, f) => sum + (f.liters * f.price), 0);
+            const totalServiceCost = appData.service.reduce((sum, s) => sum + s.cost, 0);
+
+            document.getElementById('stat-fuel-cost').innerText = formatKZT(totalFuelCost);
+            document.getElementById('stat-service-cost').innerText = formatKZT(totalServiceCost);
+
+            if (appData.fuel.length >= 2) {
+                const sorted = [...appData.fuel].sort((a,b) => a.odo - b.odo);
+                const distance = sorted[sorted.length - 1].odo - sorted[0].odo;
+                const totalLiters = sorted.slice(1).reduce((sum, f) => sum + f.liters, 0);
+                if (distance > 0) {
+                    const avg = (totalLiters / distance) * 100;
+                    document.getElementById('stat-consumption').innerText = avg.toFixed(1) + ' л/100км';
+                }
+            }
+        }
+
+        function renderFuelTable() {
+            const tbody = document.getElementById('fuel-table');
+            tbody.innerHTML = '';
+            const sorted = [...appData.fuel].sort((a,b) => b.odo - a.odo);
+            sorted.forEach((f, idx) => {
+                let consumptionText = '-';
+                if (idx < sorted.length - 1) {
+                    const prev = sorted[idx + 1];
+                    const dist = f.odo - prev.odo;
+                    if (dist > 0) {
+                        const rate = (f.liters / dist) * 100;
+                        consumptionText = rate.toFixed(1) + ' л';
+                    }
+                }
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${f.date}</td>
+                    <td>${f.odo.toLocaleString('ru-RU')} км</td>
+                    <td>${f.liters.toFixed(2)} л</td>
+                    <td>${formatKZT(f.liters * f.price)}</td>
+                    <td>${consumptionText}</td>
+                    <td><button class="btn btn-danger" onclick="deleteFuel(${f.id})">Удалить</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderRulesTable() {
+            const tbody = document.getElementById('rules-table');
+            tbody.innerHTML = '';
+            const currentOdo = getMaxOdometer();
+            appData.rules.forEach(r => {
+                const nextOdo = r.lastOdo + r.interval;
+                const left = nextOdo - currentOdo;
+                let badgeClass = 'badge-success';
+                let statusText = 'В норме';
+                if (left < 0) {
+                    badgeClass = 'badge-danger';
+                    statusText = 'Просрочено!';
+                } else if (left < 1000) {
+                    badgeClass = 'badge-warning';
+                    statusText = 'Скоро замена';
+                }
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${r.title}</strong></td>
+                    <td>${r.interval.toLocaleString('ru-RU')} км</td>
+                    <td>${r.lastOdo.toLocaleString('ru-RU')} км</td>
+                    <td>${nextOdo.toLocaleString('ru-RU')} км</td>
+                    <td>${left.toLocaleString('ru-RU')} км</td>
+                    <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                    <td><button class="btn btn-danger" onclick="deleteRule('${r.title}')">Удалить</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderServiceTable() {
+            const tbody = document.getElementById('service-table');
+            tbody.innerHTML = '';
+            const sorted = [...appData.service].sort((a,b) => new Date(b.date) - new Date(a.date));
+            sorted.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${s.date}</td>
+                    <td>${s.odo.toLocaleString('ru-RU')} км</td>
+                    <td>${s.desc}</td>
+                    <td>${formatKZT(s.cost)}</td>
+                    <td><button class="btn btn-danger" onclick="deleteService(${s.id})">Удалить</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
