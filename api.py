@@ -12,7 +12,7 @@ app.add_middleware(
     allow_origins=[
         "https://coolray775agz05.netlify.app",
         "http://coolray775agz05.netlify.app",
-        "https://mixailo77-hikari.github.io/coolray775agz05/",
+        "https://mixailo77-hikari.github.io",
         "http://localhost:3000",
     ],
     allow_credentials=True,
