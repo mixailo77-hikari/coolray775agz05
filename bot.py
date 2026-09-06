@@ -7,7 +7,7 @@ from aiogram.filters import Command
 # Замените на ваш токен от BotFather
 BOT_TOKEN = "ВАШ_ТОКЕН_БОТА"
 
-bot = Bot(token=BOT_TOKEN)
+bot = Bot(token=8714875899:AAGdzIkr8Ho2asap9dLNWQwSCbj8cj5OoJQ)
 dp = Dispatcher()
 
 # Команда /start отправляет кнопку для открытия Mini App
