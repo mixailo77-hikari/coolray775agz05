@@ -11,7 +11,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("ОШИБКА: Переменная BOT_TOKEN не найдена в окружении!")
 
-bot = Bot(token=8714875899:AAGdzIkr8Ho2asap9dLNWQwSCbj8cj5OoJQ)
+bot = Bot(token="8714875899:AAGdzIkr8Ho2asap9dLNWQwSCbj8cj5OoJQ")
 dp = Dispatcher()
 
 # Команда /start отправляет кнопку для открытия Mini App
