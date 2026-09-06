@@ -105,7 +105,7 @@ def load_car_data():
         conn.close()
 
         if row:
-            return row[0]
+            return [r[0] for r in row]
         return {}
     except Exception as e:
         print("Error in /api/car-data GET:", traceback.format_exc())
