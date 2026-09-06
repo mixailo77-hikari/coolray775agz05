@@ -515,7 +515,7 @@
         // Telegram ID пользователя или резервный ID
         const userId = tg?.initDataUnsafe?.user?.id || 12345;
         
-        // Публичный URL сервиса Railway
+        // Публичный URL вашего сервиса на Railway (куда отправляются запросы от фронтенда)
         const API_URL = 'https://zesty-prosperity-production-372a.up.railway.app/api/car-data';
 
         let appData = {
@@ -540,13 +540,12 @@
             renderAll();
         }
 
-        async function loadFromOnlineDB(showAlerter = true) {
+        async function loadFromOnlineDB(showAlert = true) {
             try {
                 const response = await fetch(`${API_URL}/?userId=${userId}`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data) {
-                        // Безопасное извлечение объекта данных из ответа сервера
                         const remoteData = Array.isArray(data) ? data[0] : data;
                         if (remoteData) {
                             appData = {
@@ -563,18 +562,18 @@
                             localStorage.setItem('car_tracker_data', JSON.stringify(appData));
                             populateCarForm();
                             renderAll();
-                            if (showAlerter) alert('Данные успешно загружены из онлайн базы БД!');
+                            if (showAlert) alert('Данные успешно загружены из онлайн БД!');
                             return;
                         }
                     }
-                    if (showAlerter) alert('Нет сохраненных данных в базе БД.');
+                    if (showAlert) alert('Нет сохраненных данных в базе БД.');
                 } else {
-                    if (showAlerter) alert('Ошибка получения данных из базы БД.');
+                    if (showAlert) alert('Ошибка получения данных из базы БД.');
                 }
             } catch (e) {
                 console.error('Ошибка загрузки данных:', e);
                 loadFromLocalStorage();
-                if (showAlerter) alert('Ошибка соединения с базой БД (загружены локальные данные).');
+                if (showAlert) alert('Ошибка соединения с базой БД (загружены локальные данные).');
             }
         }
 
@@ -614,7 +613,7 @@
         async function saveData() {
             renderAll();
             localStorage.setItem('car_tracker_data', JSON.stringify(appData));
-            saveToOnlineDB(false);
+            saveToOnlineDB(false); // Автосохранение в фон
         }
 
         function sendToTelegram() {
@@ -919,7 +918,7 @@
         }
 
         function renderServiceTable() {
-            const tbody = document.getElementById('service-table');
+            const, tbody = document.getElementById('service-table');
             tbody.innerHTML = '';
             const sorted = [...appData.service].sort((a,b) => new Date(b.date) - new Date(a.date));
             sorted.forEach(s => {
