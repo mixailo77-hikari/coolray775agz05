@@ -99,8 +99,8 @@ def load_car_data():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT data FROM car_data ORDER BY id DESC LIMIT 1")
-        row = cursor.fetchone()
+        cursor.execute("SELECT data FROM car_data ORDER BY id ASC")
+        row = cursor.fetchall()
         cursor.close()
         conn.close()
 
