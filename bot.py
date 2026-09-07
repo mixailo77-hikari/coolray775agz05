@@ -84,15 +84,31 @@ async def get_car_data_handler(request):
     })
 
 async def save_car_data_handler(request):
-    body = await request.json()
-    user_id = int(body.get('userId', 0))
-    data = body.get('data')
+    try:
+        body = await request.json()
+        user_id = int(body.get('userId', 0))
+        data = body.get('data')
+    except Exception:
+        return web.json_response({'error': 'Bad JSON'}, status=400)
 
     if not user_id or data is None:
         return web.json_response({'error': 'Invalid payload'}, status=400)
 
     await save_user_data_db(user_id, data)
     return web.json_response({'status': 'ok'})
+
+# CORS middleware для корректных запросов из браузера к aiohttp API
+@web.middleware
+async def cors_middleware(request, handler):
+    if request.method == 'OPTIONS':
+        return web.Response(headers={
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        })
+    response = await handler(request)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 # ----------------------------------------------------
 # Хэндлеры Telegram Бота
@@ -102,7 +118,7 @@ async def start_handler(message: types.Message):
     kb = [
         [types.KeyboardButton(
             text="🚗 Открыть учёт авто", 
-            web_app=types.WebAppInfo(url="https://coolray775agz05.netlify.app/")
+            web_app=types.WebAppInfo(url="https://coolray775agz05.netlify.app/")  # Замените на ваш URL фронтенда
         )]
     ]
     keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -138,15 +154,14 @@ async def main():
     # Инициализируем таблицы в БД
     await init_db()
 
-    # Настраиваем HTTP API сервер
-    app = web.Application()
+    # Настраиваем HTTP API сервер с CORS
+    app = web.Application(middlewares=[cors_middleware])
     app.router.add_get('/api/car-data', get_car_data_handler)
     app.router.add_post('/api/car-data', save_car_data_handler)
 
     runner = web.AppRunner(app)
     await runner.setup()
     
-    # Railway передает порт через переменную окружения PORT
     port = int(os.getenv("PORT", 8080))
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
