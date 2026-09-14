@@ -38,7 +38,7 @@ class AuthMiddleware(BaseMiddleware):
 
         return await handler(event, data)
 
-# Регистрируем защиту для сообщений
+# Регистрируем защиту для сообщений и колбэков
 dp.message.middleware(AuthMiddleware())
 dp.callback_query.middleware(AuthMiddleware())
 
