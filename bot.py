@@ -49,14 +49,18 @@ dp.callback_query.middleware(AuthMiddleware())
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     kb = [
-        [types.KeyboardButton(
-            text="💰 Семейный бюджет", 
-            web_app=types.WebAppInfo(url="https://family-byudjet-7794.netlify.app/")
-        )],
-        [types.KeyboardButton(
-            text="🚗 Учёт авто (Coolray)", 
-            web_app=types.WebAppInfo(url="https://coolray775agz05.netlify.app/")
-        )]
+        [
+            types.KeyboardButton(
+                text="💰 Семейный бюджет", 
+                web_app=types.WebAppInfo(url="https://family-budget-7794.netlify.app/")
+            )
+        ],
+        [
+            types.KeyboardButton(
+                text="🚗 Учёт авто (Coolray)", 
+                web_app=types.WebAppInfo(url="https://coolray775agz05.netlify.app/")
+            )
+        ]
     ]
     keyboard = types.ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
     await message.answer("Выберите нужное приложение для запуска:", reply_markup=keyboard)
@@ -67,10 +71,6 @@ async def start_handler(message: types.Message):
 async def main():
     logging.basicConfig(level=logging.INFO)
     logging.info("Запуск Telegram бота в режиме Polling...")
-    
-    # Удалены запуск aiohttp, порта и инициализация PostgreSQL.
-    # Бот работает автономно, так как оба приложения сохраняют данные самостоятельно 
-    # (JSONBin.io и Google Таблицы/LocalStorage).
     
     await dp.start_polling(bot)
 
